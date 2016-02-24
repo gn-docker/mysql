@@ -93,7 +93,7 @@ if [ "${MYSQL_REPLICATION_ROLE}" == "slave" ]; then
     echo "=> Starting MySQL ..." >> ${LOG}
     StartMySQL
     echo "=> Setting master connection info on slave" >> ${LOG}
-    mysql -uroot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_DATABASE_HOST}',MASTER_USER='${MYSQL_REPLICATION_USER}',MASTER_PASSWORD='${MYSQL_REPLICATION_PASSWORD}',MASTER_PORT=${MYSQL_DATABASE_PORT}, MASTER_CONNECT_RETRY=30"
+    mysql -uroot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}',MASTER_USER='${MYSQL_REPLICATION_USER}',MASTER_PASSWORD='${MYSQL_REPLICATION_PASSWORD}',MASTER_PORT=${MYSQL_MASTER_PORT}, MASTER_CONNECT_RETRY=30"
     echo "=> Done!" >> ${LOG}
     mysqladmin -uroot shutdown
     touch /replication_configured
