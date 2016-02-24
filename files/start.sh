@@ -65,7 +65,45 @@ else
   echo "=> Using an existing volume of MySQL" >> ${LOG}
 fi
 
-chmod a+rx /
+# Set MySQL REPLICATION - MASTER
+if [ "${MYSQL_REPLICATION_ROLE}" == "master" ]; then
+  echo "========================================================================" >> ${LOG}
+  echo "=> Configuring MySQL replication as master ..." >> ${LOG}
+  if [ ! -f /replication_configured ]; then
+    echo "=> Starting MySQL ..." >> ${LOG}
+    StartMySQL
+    echo "=> Creating a log user ${MYSQL_REPLICATION_USER}:${MYSQL_REPLICATION_PASSWORD}"
+    mysql -uroot -e "CREATE USER '${MYSQL_REPLICATION_USER}'@'%' IDENTIFIED BY '${MYSQL_REPLICATION_PASSWORD}'"
+    mysql -uroot -e "GRANT REPLICATION SLAVE ON *.* TO '${MYSQL_REPLICATION_USER}'@'%'"
+    echo "=> Done!" >> ${LOG}
+    mysqladmin -uroot shutdown
+    touch /replication_configured
+  else
+    echo "=> MySQL replication master already configured, skip" >> ${LOG}
+  fi
+  echo "========================================================================" >> ${LOG}
+fi
+
+# Set MySQL REPLICATION - SLAVE
+if [ "${MYSQL_REPLICATION_ROLE}" == "slave" ]; then
+  echo "========================================================================" >> ${LOG}
+  echo "=> Configuring MySQL replication as slave ..." >> ${LOG}
+  if [ ! -f /replication_configured ]; then
+    RAND="$(date +%s | rev | cut -c 1-2)$(echo ${RANDOM})" >> ${LOG}
+    echo "=> Starting MySQL ..." >> ${LOG}
+    StartMySQL
+    echo "=> Setting master connection info on slave" >> ${LOG}
+    mysql -uroot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_DATABASE_HOST}',MASTER_USER='${MYSQL_REPLICATION_USER}',MASTER_PASSWORD='${MYSQL_REPLICATION_PASSWORD}',MASTER_PORT=${MYSQL_DATABASE_PORT}, MASTER_CONNECT_RETRY=30"
+    echo "=> Done!" >> ${LOG}
+    mysqladmin -uroot shutdown
+    touch /replication_configured
+  else
+    echo "=> MySQL replicaiton slave already configured, skip" >> ${LOG}
+  fi
+  echo "========================================================================" >> ${LOG}
+fi
+
+
 chown mysql:mysql -R /var/lib/mysql
 chown mysql:mysql -R /var/log/mysql
 exec mysqld_safe
