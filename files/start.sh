@@ -69,7 +69,7 @@ fi
 if [ "${MYSQL_REPLICATION_ROLE}" == "master" ]; then
   echo "========================================================================" >> ${LOG}
   echo "=> Configuring MySQL replication as master ..." >> ${LOG}
-  if [ ! -f /replication_configured ]; then
+  if [ ! -f /var/lib/mysql/replication_configured ]; then
     echo "=> Starting MySQL ..." >> ${LOG}
     StartMySQL
     echo "=> Creating a log user ${MYSQL_REPLICATION_USER}:${MYSQL_REPLICATION_PASSWORD}"
@@ -77,7 +77,7 @@ if [ "${MYSQL_REPLICATION_ROLE}" == "master" ]; then
     mysql -uroot -e "GRANT REPLICATION SLAVE ON *.* TO '${MYSQL_REPLICATION_USER}'@'%'"
     echo "=> Done!" >> ${LOG}
     mysqladmin -uroot shutdown
-    touch /replication_configured
+    touch /var/lib/mysql/replication_configured
   else
     echo "=> MySQL replication master already configured, skip" >> ${LOG}
   fi
@@ -88,7 +88,7 @@ fi
 if [ "${MYSQL_REPLICATION_ROLE}" == "slave" ]; then
   echo "========================================================================" >> ${LOG}
   echo "=> Configuring MySQL replication as slave ..." >> ${LOG}
-  if [ ! -f /replication_configured ]; then
+  if [ ! -f /var/lib/mysql/replication_configured ]; then
     RAND="$(date +%s | rev | cut -c 1-2)$(echo ${RANDOM})" >> ${LOG}
     echo "=> Starting MySQL ..." >> ${LOG}
     StartMySQL
@@ -96,7 +96,7 @@ if [ "${MYSQL_REPLICATION_ROLE}" == "slave" ]; then
     mysql -uroot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}',MASTER_USER='${MYSQL_REPLICATION_USER}',MASTER_PASSWORD='${MYSQL_REPLICATION_PASSWORD}',MASTER_PORT=${MYSQL_MASTER_PORT}, MASTER_CONNECT_RETRY=30"
     echo "=> Done!" >> ${LOG}
     mysqladmin -uroot shutdown
-    touch /replication_configured
+    touch /var/lib/mysql/replication_configured
   else
     echo "=> MySQL replicaiton slave already configured, skip" >> ${LOG}
   fi
